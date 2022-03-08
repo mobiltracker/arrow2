@@ -2,7 +2,8 @@ use std::{collections::BTreeMap, convert::TryInto, ffi::CStr, ffi::CString, ptr}
 
 use crate::{
     datatypes::{
-        DataType, Extension, Field, IntegerType, IntervalUnit, Metadata, TimeUnit, UnionMode,
+        DataType, DecimalType, Extension, Field, IntegerType, IntervalUnit, Metadata, TimeUnit,
+        UnionMode,
     },
     error::{ArrowError, Result},
 };
@@ -310,30 +311,41 @@ unsafe fn to_data_type(schema: &ArrowSchema) -> Result<DataType> {
                 DataType::FixedSizeList(Box::new(child), size)
             } else if parts.len() == 2 && parts[0] == "d" {
                 let parts = parts[1].split(',').collect::<Vec<_>>();
-                if parts.len() < 2 || parts.len() > 3 {
+                if parts.len() != 2 && parts.len() != 3 {
                     return Err(ArrowError::OutOfSpec(
                         "Decimal must contain 2 or 3 comma-separated values".to_string(),
                     ));
                 };
-                if parts.len() == 3 {
-                    let bit_width = parts[0].parse::<usize>().map_err(|_| {
-                        ArrowError::OutOfSpec(
-                            "Decimal bit width is not a valid integer".to_string(),
-                        )
-                    })?;
-                    if bit_width != 128 {
-                        return Err(ArrowError::OutOfSpec(
-                            "Decimal256 is not supported".to_string(),
-                        ));
-                    }
-                }
+
                 let precision = parts[0].parse::<usize>().map_err(|_| {
                     ArrowError::OutOfSpec("Decimal precision is not a valid integer".to_string())
                 })?;
                 let scale = parts[1].parse::<usize>().map_err(|_| {
                     ArrowError::OutOfSpec("Decimal scale is not a valid integer".to_string())
                 })?;
-                DataType::Decimal(precision, scale)
+
+                let decimal_type = if parts.len() == 2 {
+                    DecimalType::Int128
+                } else if parts.len() == 3 {
+                    let bit_width = parts[2].parse::<usize>().map_err(|_| {
+                        ArrowError::OutOfSpec("Decimal bitwidth is not a valid integer".to_string())
+                    })?;
+                    match bit_width {
+                        32 => DecimalType::Int32,
+                        64 => DecimalType::Int64,
+                        128 => DecimalType::Int128,
+                        _ => {
+                            return Err(ArrowError::OutOfSpec(
+                                "Decimal256 is not supported".to_string(),
+                            ))
+                        }
+                    }
+                } else {
+                    return Err(ArrowError::OutOfSpec(
+                        "Decimal must contain 2 or 3 comma-separated values".to_string(),
+                    ));
+                };
+                DataType::Decimal(decimal_type, precision, scale)
             } else if !parts.is_empty() && ((parts[0] == "+us") || (parts[0] == "+ud")) {
                 // union
                 let mode = UnionMode::sparse(parts[0] == "+us");
@@ -415,7 +427,11 @@ fn to_format(data_type: &DataType) -> String {
                 tz.as_ref().map(|x| x.as_ref()).unwrap_or("")
             )
         }
-        DataType::Decimal(precision, scale) => format!("d:{},{}", precision, scale),
+        DataType::Decimal(type_, precision, scale) => match type_ {
+            DecimalType::Int32 => format!("d:{},{},{}", precision, scale, 32),
+            DecimalType::Int64 => format!("d:{},{},{}", precision, scale, 64),
+            DecimalType::Int128 => format!("d:{},{}", precision, scale),
+        },
         DataType::List(_) => "+l".to_string(),
         DataType::LargeList(_) => "+L".to_string(),
         DataType::Struct(_) => "+s".to_string(),

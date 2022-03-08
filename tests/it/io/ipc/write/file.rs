@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use arrow2::array::*;
 use arrow2::chunk::Chunk;
-use arrow2::datatypes::{Field, Schema};
+use arrow2::datatypes::{DataType, DecimalType, Field, Schema};
 use arrow2::error::Result;
 use arrow2::io::ipc::read::{read_file_metadata, FileReader};
 use arrow2::io::ipc::{write::*, IpcField};
@@ -361,6 +361,21 @@ fn write_sliced_list() -> Result<()> {
     array.try_extend(data).unwrap();
     let array: Arc<dyn Array> = array.into_arc().slice(1, 2).into();
 
+    let schema = Schema::from(vec![Field::new("a", array.data_type().clone(), true)]);
+    let columns = Chunk::try_new(vec![array])?;
+    round_trip(columns, schema, None, None)
+}
+
+#[test]
+fn write_decimali32() -> Result<()> {
+    use std::sync::Arc;
+    let array = Arc::new(
+        Int32Array::from([Some(1), Some(2), None, Some(4)]).to(DataType::Decimal(
+            DecimalType::Int32,
+            2,
+            2,
+        )),
+    ) as Arc<dyn Array>;
     let schema = Schema::from(vec![Field::new("a", array.data_type().clone(), true)]);
     let columns = Chunk::try_new(vec![array])?;
     round_trip(columns, schema, None, None)

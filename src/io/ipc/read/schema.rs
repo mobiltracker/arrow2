@@ -2,8 +2,8 @@ use arrow_format::ipc::planus::ReadAsRoot;
 
 use crate::{
     datatypes::{
-        get_extension, DataType, Extension, Field, IntegerType, IntervalUnit, Metadata, Schema,
-        TimeUnit, UnionMode,
+        get_extension, DataType, DecimalType, Extension, Field, IntegerType, IntervalUnit,
+        Metadata, Schema, TimeUnit, UnionMode,
     },
     error::{ArrowError, Result},
 };
@@ -197,8 +197,18 @@ fn get_data_type(
             (DataType::Duration(time_unit), IpcField::default())
         }
         Decimal(decimal) => {
-            let data_type =
-                DataType::Decimal(decimal.precision()? as usize, decimal.scale()? as usize);
+            let bit_width = decimal.bit_width()?;
+            let type_ = match bit_width {
+                32 => DecimalType::Int32,
+                64 => DecimalType::Int64,
+                128 => DecimalType::Int128,
+                _ => return Err(ArrowError::nyi("Decimal 256 not supported")),
+            };
+            let data_type = DataType::Decimal(
+                type_,
+                decimal.precision()? as usize,
+                decimal.scale()? as usize,
+            );
             (data_type, IpcField::default())
         }
         List(_) => {

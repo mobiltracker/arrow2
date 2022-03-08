@@ -7,7 +7,7 @@ use crate::{
     array::*,
     bitmap::Bitmap,
     compute::arity::unary,
-    datatypes::{DataType, TimeUnit},
+    datatypes::{DataType, DecimalType, TimeUnit},
     temporal_conversions::*,
     types::NativeType,
 };
@@ -180,8 +180,11 @@ pub fn integer_to_decimal<T: NativeType + AsPrimitive<i128>>(
         })
     });
 
-    PrimitiveArray::<i128>::from_trusted_len_iter(values)
-        .to(DataType::Decimal(to_precision, to_scale))
+    PrimitiveArray::<i128>::from_trusted_len_iter(values).to(DataType::Decimal(
+        DecimalType::Int128,
+        to_precision,
+        to_scale,
+    ))
 }
 
 pub(super) fn integer_to_decimal_dyn<T>(
@@ -225,8 +228,11 @@ where
         })
     });
 
-    PrimitiveArray::<i128>::from_trusted_len_iter(values)
-        .to(DataType::Decimal(to_precision, to_scale))
+    PrimitiveArray::<i128>::from_trusted_len_iter(values).to(DataType::Decimal(
+        DecimalType::Int128,
+        to_precision,
+        to_scale,
+    ))
 }
 
 pub(super) fn float_to_decimal_dyn<T>(

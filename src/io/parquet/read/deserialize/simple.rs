@@ -9,7 +9,7 @@ use parquet2::{
 
 use crate::{
     array::{Array, BinaryArray, DictionaryKey, MutablePrimitiveArray, PrimitiveArray, Utf8Array},
-    datatypes::{DataType, IntervalUnit, TimeUnit},
+    datatypes::{DataType, DecimalType, IntervalUnit, TimeUnit},
     error::{ArrowError, Result},
     types::NativeType,
 };
@@ -130,7 +130,7 @@ pub fn page_iter_to_arrays<'a, I: 'a + DataPages>(
 
         FixedSizeBinary(_) => dyn_iter(fixed_size_binary::Iter::new(pages, data_type, chunk_size)),
 
-        Decimal(_, _) => match physical_type {
+        Decimal(DecimalType::Int128, _, _) => match physical_type {
             PhysicalType::Int32 => dyn_iter(iden(primitive::Iter::new(
                 pages,
                 data_type,

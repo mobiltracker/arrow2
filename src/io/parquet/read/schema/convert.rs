@@ -7,7 +7,7 @@ use parquet2::schema::{
     Repetition,
 };
 
-use crate::datatypes::{DataType, Field, IntervalUnit, TimeUnit};
+use crate::datatypes::{DataType, DecimalType, Field, IntervalUnit, TimeUnit};
 
 /// Converts [`ParquetType`]s to a [`Field`], ignoring parquet fields that do not contain
 /// any physical column.
@@ -33,7 +33,7 @@ fn from_int32(
             _ => DataType::Int32,
         },
         (Some(LogicalType::DECIMAL(t)), _) => {
-            DataType::Decimal(t.precision as usize, t.scale as usize)
+            DataType::Decimal(DecimalType::Int128, t.precision as usize, t.scale as usize)
         }
         (Some(LogicalType::DATE(_)), _) => DataType::Date32,
         (Some(LogicalType::TIME(t)), _) => match t.unit {
@@ -52,7 +52,7 @@ fn from_int32(
         (_, Some(PrimitiveConvertedType::Date)) => DataType::Date32,
         (_, Some(PrimitiveConvertedType::TimeMillis)) => DataType::Time32(TimeUnit::Millisecond),
         (_, Some(PrimitiveConvertedType::Decimal(precision, scale))) => {
-            DataType::Decimal(*precision as usize, *scale as usize)
+            DataType::Decimal(DecimalType::Int128, *precision as usize, *scale as usize)
         }
         (_, _) => DataType::Int32,
     }
@@ -106,7 +106,7 @@ fn from_int64(
             _ => DataType::Int64,
         },
         (Some(LogicalType::DECIMAL(t)), _) => {
-            DataType::Decimal(t.precision as usize, t.scale as usize)
+            DataType::Decimal(DecimalType::Int128, t.precision as usize, t.scale as usize)
         }
         // handle converted types:
         (_, Some(PrimitiveConvertedType::TimeMicros)) => DataType::Time64(TimeUnit::Microsecond),
@@ -119,7 +119,7 @@ fn from_int64(
         (_, Some(PrimitiveConvertedType::Int64)) => DataType::Int64,
         (_, Some(PrimitiveConvertedType::Uint64)) => DataType::UInt64,
         (_, Some(PrimitiveConvertedType::Decimal(precision, scale))) => {
-            DataType::Decimal(*precision as usize, *scale as usize)
+            DataType::Decimal(DecimalType::Int128, *precision as usize, *scale as usize)
         }
 
         (_, _) => DataType::Int64,
@@ -150,10 +150,10 @@ fn from_fixed_len_byte_array(
 ) -> DataType {
     match (logical_type, converted_type) {
         (Some(LogicalType::DECIMAL(t)), _) => {
-            DataType::Decimal(t.precision as usize, t.scale as usize)
+            DataType::Decimal(DecimalType::Int128, t.precision as usize, t.scale as usize)
         }
         (None, Some(PrimitiveConvertedType::Decimal(precision, scale))) => {
-            DataType::Decimal(*precision as usize, *scale as usize)
+            DataType::Decimal(DecimalType::Int128, *precision as usize, *scale as usize)
         }
         (None, Some(PrimitiveConvertedType::Interval)) => {
             // There is currently no reliable way of determining which IntervalUnit

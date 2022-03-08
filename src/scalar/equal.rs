@@ -82,7 +82,7 @@ fn equal(lhs: &dyn Scalar, rhs: &dyn Scalar) -> bool {
         | DataType::Duration(_) => {
             dyn_eq!(i64, lhs, rhs)
         }
-        DataType::Decimal(_, _) => {
+        DataType::Decimal(_, _, _) => {
             dyn_eq!(i128, lhs, rhs)
         }
         DataType::Interval(IntervalUnit::DayTime) => {

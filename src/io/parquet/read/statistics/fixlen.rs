@@ -2,7 +2,7 @@ use std::any::Any;
 use std::convert::{TryFrom, TryInto};
 
 use super::primitive::PrimitiveStatistics;
-use crate::datatypes::DataType;
+use crate::datatypes::{DataType, DecimalType};
 use crate::error::{ArrowError, Result};
 use parquet2::{
     schema::types::PhysicalType,
@@ -104,7 +104,9 @@ pub(super) fn statistics_from_fix_len(
 ) -> Result<Box<dyn Statistics>> {
     use DataType::*;
     Ok(match data_type {
-        Decimal(_, _) => Box::new(PrimitiveStatistics::<i128>::try_from((stats, data_type))?),
+        Decimal(DecimalType::Int128, _, _) => {
+            Box::new(PrimitiveStatistics::<i128>::try_from((stats, data_type))?)
+        }
         FixedSizeBinary(_) => Box::new(FixedLenStatistics::from(stats)),
         other => {
             return Err(ArrowError::NotYetImplemented(format!(

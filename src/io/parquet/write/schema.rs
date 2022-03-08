@@ -2,15 +2,15 @@ use parquet2::{
     metadata::KeyValue,
     schema::{
         types::{
-            DecimalType, IntType, LogicalType, ParquetType, PhysicalType, PrimitiveConvertedType,
-            TimeType, TimeUnit as ParquetTimeUnit, TimestampType,
+            DecimalType as ParquetDecimalType, IntType, LogicalType, ParquetType, PhysicalType,
+            PrimitiveConvertedType, TimeType, TimeUnit as ParquetTimeUnit, TimestampType,
         },
         Repetition,
     },
 };
 
 use crate::{
-    datatypes::{DataType, Field, Schema, TimeUnit},
+    datatypes::{DataType, DecimalType, Field, Schema, TimeUnit},
     error::{ArrowError, Result},
     io::ipc::write::default_ipc_fields,
     io::ipc::write::schema_to_bytes,
@@ -290,10 +290,15 @@ pub fn to_parquet_type(field: &Field) -> Result<ParquetType> {
             None,
             None,
         )?),
-        DataType::Decimal(precision, scale) => {
+        DataType::Decimal(type_, precision, scale) => {
+            if *type_ != DecimalType::Int128 {
+                return Err(ArrowError::nyi(
+                    "Only decimal 128 implemented to write to parquet",
+                ));
+            }
             let precision = *precision;
             let scale = *scale;
-            let logical_type = Some(LogicalType::DECIMAL(DecimalType {
+            let logical_type = Some(LogicalType::DECIMAL(ParquetDecimalType {
                 scale: scale as i32,
                 precision: precision as i32,
             }));

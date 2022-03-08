@@ -19,7 +19,7 @@ pub mod time;
 use crate::{
     array::{Array, DictionaryArray, PrimitiveArray},
     bitmap::Bitmap,
-    datatypes::{DataType, IntervalUnit, TimeUnit},
+    datatypes::{DataType, DecimalType, IntervalUnit, TimeUnit},
     scalar::{PrimitiveScalar, Scalar},
 };
 
@@ -55,7 +55,7 @@ macro_rules! arith {
             (Float32, Float32) => primitive!(lhs, rhs, $op, f32),
             (Float64, Float64) => primitive!(lhs, rhs, $op, f64),
             $ (
-            (Decimal(_, _), Decimal(_, _)) => {
+            (Decimal(DecimalType::Int128, _, _), Decimal(DecimalType::Int128, _, _)) => {
                 let lhs = lhs.as_any().downcast_ref().unwrap();
                 let rhs = rhs.as_any().downcast_ref().unwrap();
                 Box::new(decimal::$op_decimal(lhs, rhs)) as Box<dyn Array>
@@ -148,7 +148,7 @@ macro_rules! arith_scalar {
             (Float32, Float32) => primitive_scalar!(lhs, rhs, $op, f32),
             (Float64, Float64) => primitive_scalar!(lhs, rhs, $op, f64),
             $ (
-            (Decimal(_, _), Decimal(_, _)) => {
+            (Decimal(DecimalType::Int128, _, _), Decimal(DecimalType::Int128, _, _)) => {
                 let lhs = lhs.as_any().downcast_ref().unwrap();
                 let rhs = rhs.as_any().downcast_ref().unwrap();
                 Box::new(decimal::$op_decimal(lhs, rhs)) as Box<dyn Array>
@@ -242,7 +242,10 @@ pub fn can_add(lhs: &DataType, rhs: &DataType) -> bool {
             | (Float64, Float64)
             | (Float32, Float32)
             | (Duration(_), Duration(_))
-            | (Decimal(_, _), Decimal(_, _))
+            | (
+                Decimal(DecimalType::Int128, _, _),
+                Decimal(DecimalType::Int128, _, _)
+            )
             | (Date32, Duration(_))
             | (Date64, Duration(_))
             | (Time32(TimeUnit::Millisecond), Duration(_))
@@ -303,7 +306,10 @@ pub fn can_sub(lhs: &DataType, rhs: &DataType) -> bool {
             | (Float64, Float64)
             | (Float32, Float32)
             | (Duration(_), Duration(_))
-            | (Decimal(_, _), Decimal(_, _))
+            | (
+                Decimal(DecimalType::Int128, _, _),
+                Decimal(DecimalType::Int128, _, _)
+            )
             | (Date32, Duration(_))
             | (Date64, Duration(_))
             | (Time32(TimeUnit::Millisecond), Duration(_))
@@ -347,7 +353,10 @@ pub fn can_mul(lhs: &DataType, rhs: &DataType) -> bool {
             | (UInt64, UInt64)
             | (Float64, Float64)
             | (Float32, Float32)
-            | (Decimal(_, _), Decimal(_, _))
+            | (
+                Decimal(DecimalType::Int128, _, _),
+                Decimal(DecimalType::Int128, _, _)
+            )
     )
 }
 

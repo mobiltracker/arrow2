@@ -246,7 +246,12 @@ pub fn array_to_page(
             options,
             descriptor,
         ),
-        DataType::Decimal(precision, _) => {
+        DataType::Decimal(type_, precision, _) => {
+            if *type_ != DecimalType::Int128 {
+                return Err(ArrowError::nyi(
+                    "Only decimal 128 supported to write to parquet",
+                ));
+            }
             let precision = *precision;
             let array = array
                 .as_any()

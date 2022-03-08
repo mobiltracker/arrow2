@@ -3,7 +3,7 @@
 use arrow2::array::*;
 use arrow2::compute::arithmetics::decimal::{adaptive_div, checked_div, div, saturating_div};
 use arrow2::compute::arithmetics::{ArrayCheckedDiv, ArrayDiv};
-use arrow2::datatypes::DataType;
+use arrow2::datatypes::{DataType, DecimalType};
 
 #[test]
 fn test_divide_normal() {
@@ -19,7 +19,7 @@ fn test_divide_normal() {
         Some(30_000i128),
         Some(123_456i128),
     ])
-    .to(DataType::Decimal(7, 3));
+    .to(DataType::Decimal(DecimalType::Int128, 7, 3));
 
     let b = PrimitiveArray::from([
         Some(123_456i128),
@@ -29,7 +29,7 @@ fn test_divide_normal() {
         Some(4_000i128),
         Some(654_321i128),
     ])
-    .to(DataType::Decimal(7, 3));
+    .to(DataType::Decimal(DecimalType::Int128, 7, 3));
 
     let result = div(&a, &b);
     let expected = PrimitiveArray::from([
@@ -40,7 +40,7 @@ fn test_divide_normal() {
         Some(7_500i128),
         Some(0_188i128),
     ])
-    .to(DataType::Decimal(7, 3));
+    .to(DataType::Decimal(DecimalType::Int128, 7, 3));
 
     assert_eq!(result, expected);
 
@@ -52,16 +52,18 @@ fn test_divide_normal() {
 #[test]
 #[should_panic]
 fn test_divide_decimal_wrong_precision() {
-    let a = PrimitiveArray::from([None]).to(DataType::Decimal(5, 2));
-    let b = PrimitiveArray::from([None]).to(DataType::Decimal(6, 2));
+    let a = PrimitiveArray::from([None]).to(DataType::Decimal(DecimalType::Int128, 5, 2));
+    let b = PrimitiveArray::from([None]).to(DataType::Decimal(DecimalType::Int128, 6, 2));
     div(&a, &b);
 }
 
 #[test]
 #[should_panic(expected = "Overflow in multiplication presented for precision 5")]
 fn test_divide_panic() {
-    let a = PrimitiveArray::from([Some(99999i128)]).to(DataType::Decimal(5, 2));
-    let b = PrimitiveArray::from([Some(000_01i128)]).to(DataType::Decimal(5, 2));
+    let a =
+        PrimitiveArray::from([Some(99999i128)]).to(DataType::Decimal(DecimalType::Int128, 5, 2));
+    let b =
+        PrimitiveArray::from([Some(000_01i128)]).to(DataType::Decimal(DecimalType::Int128, 5, 2));
     div(&a, &b);
 }
 
@@ -75,7 +77,7 @@ fn test_divide_saturating() {
         Some(30_000i128),
         Some(123_456i128),
     ])
-    .to(DataType::Decimal(7, 3));
+    .to(DataType::Decimal(DecimalType::Int128, 7, 3));
 
     let b = PrimitiveArray::from([
         Some(123_456i128),
@@ -85,7 +87,7 @@ fn test_divide_saturating() {
         Some(4_000i128),
         Some(654_321i128),
     ])
-    .to(DataType::Decimal(7, 3));
+    .to(DataType::Decimal(DecimalType::Int128, 7, 3));
 
     let result = saturating_div(&a, &b);
     let expected = PrimitiveArray::from([
@@ -96,7 +98,7 @@ fn test_divide_saturating() {
         Some(7_500i128),
         Some(0_188i128),
     ])
-    .to(DataType::Decimal(7, 3));
+    .to(DataType::Decimal(DecimalType::Int128, 7, 3));
 
     assert_eq!(result, expected);
 }
@@ -110,7 +112,7 @@ fn test_divide_saturating_overflow() {
         Some(99999i128),
         Some(99999i128),
     ])
-    .to(DataType::Decimal(5, 2));
+    .to(DataType::Decimal(DecimalType::Int128, 5, 2));
     let b = PrimitiveArray::from([
         Some(-00001i128),
         Some(00001i128),
@@ -118,7 +120,7 @@ fn test_divide_saturating_overflow() {
         Some(-00020i128),
         Some(00000i128),
     ])
-    .to(DataType::Decimal(5, 2));
+    .to(DataType::Decimal(DecimalType::Int128, 5, 2));
 
     let result = saturating_div(&a, &b);
 
@@ -129,7 +131,7 @@ fn test_divide_saturating_overflow() {
         Some(-99999i128),
         Some(00000i128),
     ])
-    .to(DataType::Decimal(5, 2));
+    .to(DataType::Decimal(DecimalType::Int128, 5, 2));
 
     assert_eq!(result, expected);
 }
@@ -144,7 +146,7 @@ fn test_divide_checked() {
         Some(30_000i128),
         Some(123_456i128),
     ])
-    .to(DataType::Decimal(7, 3));
+    .to(DataType::Decimal(DecimalType::Int128, 7, 3));
 
     let b = PrimitiveArray::from([
         Some(123_456i128),
@@ -154,7 +156,7 @@ fn test_divide_checked() {
         Some(4_000i128),
         Some(654_321i128),
     ])
-    .to(DataType::Decimal(7, 3));
+    .to(DataType::Decimal(DecimalType::Int128, 7, 3));
 
     let result = div(&a, &b);
     let expected = PrimitiveArray::from([
@@ -165,7 +167,7 @@ fn test_divide_checked() {
         Some(7_500i128),
         Some(0_188i128),
     ])
-    .to(DataType::Decimal(7, 3));
+    .to(DataType::Decimal(DecimalType::Int128, 7, 3));
 
     assert_eq!(result, expected);
 }
@@ -173,12 +175,19 @@ fn test_divide_checked() {
 #[test]
 fn test_divide_checked_overflow() {
     let a = PrimitiveArray::from([Some(1_00i128), Some(4_00i128), Some(6_00i128)])
-        .to(DataType::Decimal(5, 2));
-    let b =
-        PrimitiveArray::from([Some(000_00i128), None, Some(2_00i128)]).to(DataType::Decimal(5, 2));
+        .to(DataType::Decimal(DecimalType::Int128, 5, 2));
+    let b = PrimitiveArray::from([Some(000_00i128), None, Some(2_00i128)]).to(DataType::Decimal(
+        DecimalType::Int128,
+        5,
+        2,
+    ));
 
     let result = checked_div(&a, &b);
-    let expected = PrimitiveArray::from([None, None, Some(3_00i128)]).to(DataType::Decimal(5, 2));
+    let expected = PrimitiveArray::from([None, None, Some(3_00i128)]).to(DataType::Decimal(
+        DecimalType::Int128,
+        5,
+        2,
+    ));
 
     assert_eq!(result, expected);
 
@@ -193,38 +202,59 @@ fn test_divide_adaptive() {
     //    10.0000 -> 6, 4
     // -----------------
     //   100.0000 -> 9, 4
-    let a = PrimitiveArray::from([Some(1000_00i128)]).to(DataType::Decimal(7, 2));
-    let b = PrimitiveArray::from([Some(10_0000i128)]).to(DataType::Decimal(6, 4));
+    let a =
+        PrimitiveArray::from([Some(1000_00i128)]).to(DataType::Decimal(DecimalType::Int128, 7, 2));
+    let b =
+        PrimitiveArray::from([Some(10_0000i128)]).to(DataType::Decimal(DecimalType::Int128, 6, 4));
     let result = adaptive_div(&a, &b).unwrap();
 
-    let expected = PrimitiveArray::from([Some(100_0000i128)]).to(DataType::Decimal(9, 4));
+    let expected =
+        PrimitiveArray::from([Some(100_0000i128)]).to(DataType::Decimal(DecimalType::Int128, 9, 4));
 
     assert_eq!(result, expected);
-    assert_eq!(result.data_type(), &DataType::Decimal(9, 4));
+    assert_eq!(
+        result.data_type(),
+        &DataType::Decimal(DecimalType::Int128, 9, 4)
+    );
 
     //   11111.0    -> 6, 1
     //      10.002  -> 5, 3
     // -----------------
     //    1110.877  -> 8, 3
-    let a = PrimitiveArray::from([Some(11111_0i128)]).to(DataType::Decimal(6, 1));
-    let b = PrimitiveArray::from([Some(10_002i128)]).to(DataType::Decimal(5, 3));
+    let a =
+        PrimitiveArray::from([Some(11111_0i128)]).to(DataType::Decimal(DecimalType::Int128, 6, 1));
+    let b =
+        PrimitiveArray::from([Some(10_002i128)]).to(DataType::Decimal(DecimalType::Int128, 5, 3));
     let result = adaptive_div(&a, &b).unwrap();
 
-    let expected = PrimitiveArray::from([Some(1110_877i128)]).to(DataType::Decimal(8, 3));
+    let expected =
+        PrimitiveArray::from([Some(1110_877i128)]).to(DataType::Decimal(DecimalType::Int128, 8, 3));
 
     assert_eq!(result, expected);
-    assert_eq!(result.data_type(), &DataType::Decimal(8, 3));
+    assert_eq!(
+        result.data_type(),
+        &DataType::Decimal(DecimalType::Int128, 8, 3)
+    );
 
     //     12345.67   ->  7, 2
     //     12345.678  ->  8, 3
     // -----------------
     //         0.999  ->  8, 3
-    let a = PrimitiveArray::from([Some(12345_67i128)]).to(DataType::Decimal(7, 2));
-    let b = PrimitiveArray::from([Some(12345_678i128)]).to(DataType::Decimal(8, 3));
+    let a =
+        PrimitiveArray::from([Some(12345_67i128)]).to(DataType::Decimal(DecimalType::Int128, 7, 2));
+    let b = PrimitiveArray::from([Some(12345_678i128)]).to(DataType::Decimal(
+        DecimalType::Int128,
+        8,
+        3,
+    ));
     let result = adaptive_div(&a, &b).unwrap();
 
-    let expected = PrimitiveArray::from([Some(0_999i128)]).to(DataType::Decimal(8, 3));
+    let expected =
+        PrimitiveArray::from([Some(0_999i128)]).to(DataType::Decimal(DecimalType::Int128, 8, 3));
 
     assert_eq!(result, expected);
-    assert_eq!(result.data_type(), &DataType::Decimal(8, 3));
+    assert_eq!(
+        result.data_type(),
+        &DataType::Decimal(DecimalType::Int128, 8, 3)
+    );
 }

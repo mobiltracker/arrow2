@@ -77,7 +77,11 @@ pub(super) fn schema() -> (AvroSchema, Schema) {
             DataType::Dictionary(i32::KEY_TYPE, Box::new(DataType::Utf8), false),
             false,
         ),
-        Field::new("decimal", DataType::Decimal(18, 5), false),
+        Field::new(
+            "decimal",
+            DataType::Decimal(DecimalType::Int128, 18, 5),
+            false,
+        ),
     ]);
 
     (AvroSchema::parse_str(raw_schema).unwrap(), schema)
@@ -113,7 +117,7 @@ pub(super) fn data() -> Chunk<Arc<dyn Array>> {
         )),
         Arc::new(
             PrimitiveArray::<i128>::from_slice([12345678i128, -12345678i128])
-                .to(DataType::Decimal(18, 5)),
+                .to(DataType::Decimal(DecimalType::Int128, 18, 5)),
         ),
     ];
 

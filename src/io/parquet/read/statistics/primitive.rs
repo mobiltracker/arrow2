@@ -1,4 +1,4 @@
-use crate::datatypes::TimeUnit;
+use crate::datatypes::{DecimalType, TimeUnit};
 use crate::{datatypes::DataType, types::NativeType};
 use parquet2::schema::types::{
     LogicalType, ParquetType, TimeUnit as ParquetTimeUnit, TimestampType,
@@ -69,7 +69,9 @@ pub(super) fn statistics_from_i32(
         UInt32 => Box::new(PrimitiveStatistics::<u32>::from((stats, data_type))),
         Int8 => Box::new(PrimitiveStatistics::<i8>::from((stats, data_type))),
         Int16 => Box::new(PrimitiveStatistics::<i16>::from((stats, data_type))),
-        Decimal(_, _) => Box::new(PrimitiveStatistics::<i128>::from((stats, data_type))),
+        Decimal(DecimalType::Int128, _, _) => {
+            Box::new(PrimitiveStatistics::<i128>::from((stats, data_type)))
+        }
         _ => Box::new(PrimitiveStatistics::<i32>::from((stats, data_type))),
     })
 }
@@ -126,7 +128,9 @@ pub(super) fn statistics_from_i64(
                 .max_value
                 .map(|x| timestamp(stats.descriptor.type_(), time_unit, x)),
         }),
-        Decimal(_, _) => Box::new(PrimitiveStatistics::<i128>::from((stats, data_type))),
+        Decimal(DecimalType::Int128, _, _) => {
+            Box::new(PrimitiveStatistics::<i128>::from((stats, data_type)))
+        }
         _ => Box::new(PrimitiveStatistics::<i64>::from((stats, data_type))),
     })
 }
