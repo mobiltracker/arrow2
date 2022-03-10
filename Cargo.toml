@@ -147,7 +147,6 @@ io_parquet_compression = [
     "parquet2/snappy",
     "parquet2/gzip",
     "parquet2/lz4",
-    "parquet2/brotli",
 ]
 io_avro = ["avro-schema", "streaming-iterator", "fallible-streaming-iterator", "serde_json"]
 io_avro_compression = [
